@@ -1,8 +1,7 @@
 import express from 'express';
 import authenticate from '../middlewares/authenticate.js';
 import { getCurrentUserController, getUserByIdController, uploadAvatarController } from '../controllers/usersControllers.js';
-import { upload } from '../middlewares/uploadAvatar.js';
-import express from 'express';
+import upload from '../middlewares/uploadAvatar.js';
 import { getUserRecipes, getUserFavoriteRecipes } from '../controllers/usersController.js';
 import validateQuery from '../middlewares/validateQuery.js';
 import { listParamsSchema } from '../schemas/userRecipesSchemas.js';
