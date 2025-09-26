@@ -31,4 +31,7 @@ router.use('/ingredients', ingredientsRouter);
 
 router.use('/testimonials', testimonialsRouter);
 
+router.use('/users', usersRouter);
+
+
 export default router;

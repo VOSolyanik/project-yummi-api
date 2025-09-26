@@ -525,6 +525,67 @@ paths:
           description: Authentication required
         '404':
           description: Recipe not found in favorites
+  /users/{id}/recipes:
+    get:
+      summary: Get user's own recipes
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID (UUID)
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+        - name: sortBy
+          in: query
+          schema: { type: string, enum: [title, time, createdAt], default: createdAt }
+        - name: sortDir
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedRecipes' }
+        '400': { description: Invalid id or query params }
+        '404': { description: User not found }
+
+  /users/{id}/favorites:
+    get:
+      summary: Get user's favorite recipes
+      tags: [Users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User ID (UUID)
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 12 }
+        - name: sortBy
+          in: query
+          schema: { type: string, enum: [title, time, createdAt], default: createdAt }
+        - name: sortDir
+          in: query
+          schema: { type: string, enum: [asc, desc], default: desc }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaginatedRecipes' }
+        '400': { description: Invalid id or query params }
+        '404': { description: User not found }
 
 components:
   securitySchemes:
