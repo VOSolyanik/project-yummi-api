@@ -9,14 +9,6 @@ const Follow = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    followerId: { 
-      type: DataTypes.STRING,
-       allowNull: false
-      },
-    followingId: { 
-      type: DataTypes.STRING, 
-      allowNull: false 
-    },
   },
   { tableName: 'follows', timestamps: false }
 );

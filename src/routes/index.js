@@ -5,7 +5,6 @@ import categoriesRouter from './categoriesRouter.js';
 import ingredientsRouter from './ingredientsRouter.js';
 import testimonialsRouter from './testimonialsRouter.js';
 import recipeRouter from './recipeRouter.js';
-import usersRouter from './usersRouter.js';
 
 const router = express.Router();
 
@@ -21,7 +20,6 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRouter);
 
 router.use('/recipes', recipeRouter);
-router.use('/users', usersRouter);
 
 router.use('/categories', categoriesRouter);
 

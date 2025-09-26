@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Yummi API
   description: REST API documentation for a recipe sharing platform built with Node.js, Express, and PostgreSQL
-  version: 1.0.1
+  version: 1.0.0
 
 servers:
   - url: http://localhost:3000/api
@@ -42,13 +42,13 @@ paths:
             schema:
               type: object
               required:
-                - username
+                - name
                 - email
                 - password
               properties:
-                username:
+                name:
                   type: string
-                  example: john_doe
+                  example: John Doe
                 email:
                   type: string
                   format: email
@@ -62,7 +62,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                $ref: '#/components/schemas/User'
         '400':
           description: Validation error
         '409':
@@ -96,7 +96,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
         '401':
           description: Invalid credentials
 
@@ -112,77 +117,6 @@ paths:
           description: Logout successful
         '401':
           description: Not authenticated
-
-  /users/me:
-    get:
-      summary: Get current user info
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Current user info
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserMe'
-        '401':
-          description: Unauthorized
-
-  /users/{id}:
-    get:
-      summary: Get another user's details
-      tags: [Users]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-          description: User ID
-      responses:
-        '200':
-          description: User details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserDetail'
-        '404':
-          description: User not found
-
-  /users/avatar:
-    patch:
-      summary: Update user avatar
-      tags: [Users]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - avatar
-              properties:
-                avatar:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Avatar updated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  avatarURL:
-                    type: string
-                    format: uri
-        '400':
-          description: File required
-        '401':
-          description: Unauthorized
 
   /categories:
     get:
@@ -314,6 +248,7 @@ paths:
                   totalCount:
                     type: integer
                     description: Total number of recipes matching the filters
+
     post:
       summary: Create recipe
       description: Private endpoint for creating a new recipe
@@ -397,6 +332,7 @@ paths:
                 $ref: '#/components/schemas/Recipe'
         '404':
           description: Recipe not found
+
     patch:
       summary: Update recipe
       description: Private endpoint for updating own recipe
@@ -432,6 +368,7 @@ paths:
           description: Access denied
         '404':
           description: Recipe not found
+
     delete:
       summary: Delete recipe
       description: Private endpoint for deleting own recipe
@@ -496,6 +433,7 @@ paths:
           description: Authentication required
         '404':
           description: Recipe not found
+
     delete:
       summary: Remove from favorites
       description: Private endpoint for removing recipe from favorites
@@ -534,13 +472,6 @@ components:
       bearerFormat: JWT
 
   schemas:
-    AuthResponse:
-      type: object
-      properties:
-        token:
-          type: string
-        user:
-          $ref: '#/components/schemas/User'
     User:
       type: object
       properties:
@@ -562,12 +493,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-    UserMe:
-      allOf:
-        - $ref: '#/components/schemas/User'
-    UserDetail:
-      allOf:
-        - $ref: '#/components/schemas/User'
 
     Category:
       type: object
@@ -597,10 +522,18 @@ components:
         id:
           type: string
           format: uuid
-          example: 9b8a7c6d-5e4f-3a2b-1c0d-9e8f7a6b5c4d
+          example: 9f8e7d6c-5b4a-3210-fedc-ba9876543210
         name:
           type: string
           example: Tomato
+        desc:
+          type: string
+          nullable: true
+          example: Fresh red tomato commonly used in salads and sauces
+        imgUrl:
+          type: string
+          nullable: true
+          example: https://example.com/images/tomato.png
 
     Testimonial:
       type: object
@@ -608,10 +541,37 @@ components:
         id:
           type: string
           format: uuid
-        text:
+          example: 11112222-3333-4444-5555-666677778888
+        testimonial:
           type: string
-        author:
+          example: I love this app! The recipes are amazing and easy to follow.
+        ownerId:
           type: string
+          format: uuid
+          example: ddeeccbb-aabb-ccdd-eeff-001122334455
+        owner:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: ddeeccbb-aabb-ccdd-eeff-001122334455
+            name:
+              type: string
+              example: John Smith
+            avatarUrl:
+              type: string
+              format: uri
+              nullable: true
+              example: https://example.com/avatars/john.jpg
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-09-24T18:30:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2025-09-24T18:30:00.000Z
 
     Recipe:
       type: object
@@ -621,30 +581,53 @@ components:
           format: uuid
         title:
           type: string
+          example: Chocolate Chip Cookies
         description:
           type: string
+          example: Delicious homemade chocolate chip cookies that are crispy on the outside and chewy on the inside
+        instructions:
+          type: string
+          example: Preheat oven to 375°F. Mix flour, baking soda, and salt in a bowl...
+        thumbUrl:
+          type: string
+          format: uri
+          example: https://example.com/images/recipe-thumb.jpg
         time:
           type: integer
           description: Cooking time in minutes
-        areaId:
-          type: string
-          format: uuid
-        categoryId:
-          type: string
-          format: uuid
+          example: 25
+        category:
+          $ref: '#/components/schemas/Category'
+        area:
+          allOf:
+            - $ref: '#/components/schemas/Area'
+            - nullable: true
+        owner:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            avatarUrl:
+              type: string
+              format: uri
+              nullable: true
         ingredients:
           type: array
           items:
-            type: string
-        instructions:
-          type: array
-          items:
-            type: string
-        favoritesCount:
-          type: integer
-        authorId:
-          type: string
-          format: uuid
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+                example: Oatmeal
+              measure:
+                type: string
+                example: 2 cups
         createdAt:
           type: string
           format: date-time
@@ -654,49 +637,95 @@ components:
 
     CreateRecipeRequest:
       type: object
-      required: [title, description, time, categoryId, areaId, ingredients, instructions]
+      required:
+        - title
+        - instructions
+        - thumbUrl
+        - time
+        - categoryId
+        - ingredients
       properties:
         title:
           type: string
+          minLength: 1
+          maxLength: 200
+          example: Chocolate Chip Cookies
         description:
           type: string
+          maxLength: 1000
+          example: Delicious homemade cookies
+        instructions:
+          type: string
+          minLength: 1
+          example: Preheat oven to 375°F. Mix ingredients...
+        thumbUrl:
+          type: string
+          format: uri
+          example: https://example.com/images/recipe.jpg
         time:
           type: integer
+          minimum: 1
+          example: 25
         categoryId:
           type: string
           format: uuid
         areaId:
           type: string
           format: uuid
+          nullable: true
         ingredients:
           type: array
+          minItems: 0
           items:
-            type: string
-        instructions:
-          type: array
-          items:
-            type: string
+            type: object
+            required:
+              - id
+              - measure
+            properties:
+              id:
+                type: string
+                format: uuid
+              measure:
+                type: string
+                example: 2 cups
 
     UpdateRecipeRequest:
       type: object
       properties:
         title:
           type: string
+          minLength: 1
+          maxLength: 200
         description:
           type: string
+          maxLength: 1000
+        instructions:
+          type: string
+          minLength: 1
+        thumbUrl:
+          type: string
+          format: uri
         time:
           type: integer
+          minimum: 1
         categoryId:
           type: string
           format: uuid
         areaId:
           type: string
           format: uuid
+          nullable: true
         ingredients:
           type: array
+          minItems: 0
           items:
-            type: string
-        instructions:
-          type: array
-          items:
-            type: string
+            type: object
+            required:
+              - id
+              - measure
+            properties:
+              id:
+                type: string
+                format: uuid
+              measure:
+                type: string
