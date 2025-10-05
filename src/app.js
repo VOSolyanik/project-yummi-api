@@ -1,6 +1,6 @@
 import express from 'express';
 import morgan from 'morgan';
-import cors from 'cors';
+import setupCors from './config/cors.js';
 import 'dotenv/config';
 import errorHandler from './middlewares/errorHandler.js';
 import { swaggerUi, swaggerDocument } from './config/swagger.js';
@@ -10,7 +10,7 @@ const app = express();
 
 // middleware
 app.use(morgan('tiny'));
-app.use(cors());
+app.use(setupCors());
 app.use(express.json());
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

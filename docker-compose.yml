@@ -10,12 +10,10 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     environment:
-      - DB_HOST=${DB_HOST:-postgres}
-      - DB_NAME=${DB_NAME:-yummi}
-      - DB_USER=${DB_USER:-pg_user}
-      - DB_PASS=${DB_PASS:-pg_password}
-      - DB_PORT=${DB_PORT:-5432}
+      - NODE_ENV=development
       - PORT=${PORT:-3000}
+      - DATABASE_URL=${DATABASE_URL:-postgres://pg_user:pg_password@postgres:5432/yummi}
+      - DB_SSL=${DB_SSL:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,7 +35,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-user} -d ${DB_NAME:-yammi}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-pg_user} -d ${DB_NAME:-yummi}']
       interval: 5s
       timeout: 5s
       retries: 5

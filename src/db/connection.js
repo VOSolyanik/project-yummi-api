@@ -1,22 +1,21 @@
 import { Sequelize } from 'sequelize';
+import 'dotenv/config';
 
-const { DB_HOST, DB_NAME, DB_USER, DB_PASS, DB_PORT, DB_SSL } = process.env;
-if (!DB_HOST || !DB_NAME || !DB_USER || !DB_PASS || !DB_PORT) {
-  throw new Error('Database configuration variables are not set');
+const { DATABASE_URL, DB_SSL, NODE_ENV } = process.env;
+
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
 }
 
-const sequelize = new Sequelize(`postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}`, {
+const isProduction = NODE_ENV === 'production';
+const useSSL = DB_SSL === 'true';
+
+const sequelize = new Sequelize(DATABASE_URL, {
   dialect: 'postgres',
-  logging: false,
-  dialectOptions:
-    DB_SSL === 'true'
-      ? {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false, // useful for managed services like Render
-          },
-        }
-      : {},
+  logging: !isProduction,
+  dialectOptions: useSSL
+    ? { ssl: { require: true, rejectUnauthorized: false } }
+    : {},
 });
 
 export default sequelize;
