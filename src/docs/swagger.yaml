@@ -5,8 +5,8 @@ info:
   version: 1.0.1
 
 servers:
-  - url: http://localhost:3000/api
-    description: Local development server
+  - url: /api
+    description: API server (works with any domain)
 
 paths:
   /health:

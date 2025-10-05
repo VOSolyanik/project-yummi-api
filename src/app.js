@@ -3,7 +3,7 @@ import morgan from 'morgan';
 import setupCors from './config/cors.js';
 import 'dotenv/config';
 import errorHandler from './middlewares/errorHandler.js';
-import { swaggerUi, swaggerDocument } from './config/swagger.js';
+import { swaggerUi, getSwaggerConfig } from './config/swagger.js';
 import routes from './routes/index.js';
 
 const app = express();
@@ -13,7 +13,10 @@ app.use(morgan('tiny'));
 app.use(setupCors());
 app.use(express.json());
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use('/docs', swaggerUi.serve, (req, res, next) => {
+  const swaggerConfig = getSwaggerConfig(req);
+  swaggerUi.setup(swaggerConfig)(req, res, next);
+});
 
 app.use('/api', routes);
 

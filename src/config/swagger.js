@@ -6,4 +6,21 @@ const docsDir = path.resolve('src', 'docs');
 
 const swaggerDocument = YAML.load(path.join(docsDir, 'swagger.yaml'));
 
-export { swaggerUi, swaggerDocument };
+// Make server URLs dynamic based on environment
+const getSwaggerConfig = (req) => {
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}/api`;
+  
+  return {
+    ...swaggerDocument,
+    servers: [
+      {
+        url: baseUrl,
+        description: `${process.env.NODE_ENV || 'development'} server`
+      }
+    ]
+  };
+};
+
+export { swaggerUi, getSwaggerConfig };
