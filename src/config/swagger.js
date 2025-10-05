@@ -8,10 +8,17 @@ const swaggerDocument = YAML.load(path.join(docsDir, 'swagger.yaml'));
 
 // Make server URLs dynamic based on environment
 const getSwaggerConfig = (req) => {
-  const protocol = req.protocol;
+  // Handle HTTPS properly for production (Render uses reverse proxy)
+  let protocol = req.get('x-forwarded-proto') || req.protocol;
+
+  // Force HTTPS in production
+  if (process.env.NODE_ENV === 'production') {
+    protocol = 'https';
+  }
+
   const host = req.get('host');
   const baseUrl = `${protocol}://${host}/api`;
-  
+
   return {
     ...swaggerDocument,
     servers: [
