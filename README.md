@@ -24,6 +24,8 @@ designed with a modular architecture for scalability and maintainability.
 - **UUID Primary Keys** for all entities
 - **Bcrypt Password Hashing** for secure authentication
 - **JWT Authentication** system
+- **Image Upload** with Cloudinary integration
+- **File Upload** middleware with Multer
 - **Docker** support for development and deployment
 - **API Documentation** with Swagger/OpenAPI
 - **Environment-based Configuration**
@@ -32,6 +34,7 @@ designed with a modular architecture for scalability and maintainability.
 - **Health Check** endpoints
 - **CORS** enabled
 - **Jest Testing Framework** with coverage reports
+- **Request Validation** with Joi schemas
 
 ## 🏗️ Project Structure
 
@@ -41,9 +44,18 @@ project-yummi-api/
 │   ├── app.js                      # Express app configuration
 │   ├── server.js                   # Server entry point
 │   ├── config/                     # Configuration files
+│   │   ├── cloudinary.js           # Cloudinary configuration
+│   │   ├── cors.js                 # CORS configuration
 │   │   └── swagger.js              # Swagger documentation setup
 │   ├── controllers/                # Route controllers
-│   │   └── authController.js
+│   │   ├── authController.js       # Authentication endpoints
+│   │   ├── areasController.js      # Cuisine areas endpoints
+│   │   ├── categoriesController.js # Recipe categories endpoints
+│   │   ├── ingredientsController.js# Ingredients endpoints
+│   │   ├── recipeController.js     # Recipe management endpoints
+│   │   ├── testimonialsController.js# Testimonials endpoints
+│   │   ├── usersController.js      # User profile endpoints
+│   │   └── usersSocialController.js# Social features (follow/unfollow)
 │   ├── db/                         # Database layer
 │   │   ├── connection.js           # Sequelize database connection
 │   │   ├── config/
@@ -63,15 +75,52 @@ project-yummi-api/
 │   │   │       └── RecipeIngredient.js
 │   │   └── seeders/                # Database seeders
 │   ├── docs/                       # API documentation
+│   │   └── swagger.yaml            # OpenAPI 3.0 specification
+│   ├── errors/                     # Custom error classes
+│   │   └── DomainErrors.js         # Business logic errors
 │   ├── middlewares/                # Custom middleware
-│   │   └── errorHandler.js         # Global error handling
+│   │   ├── authenticate.js         # JWT authentication
+│   │   ├── errorHandler.js         # Global error handling
+│   │   ├── parseMultipartBody.js   # Parse multipart form data
+│   │   ├── uploadAvatar.js         # Avatar upload handling
+│   │   ├── uploadRecipeImage.js    # Recipe image upload
+│   │   ├── validateBody.js         # Request body validation
+│   │   └── validateQuery.js        # Query parameters validation
 │   ├── routes/                     # API routes
 │   │   ├── index.js                # Main router
-│   │   └── authRouter.js           # Authentication routes
+│   │   ├── authRouter.js           # Authentication routes
+│   │   ├── areasRouter.js          # Areas routes
+│   │   ├── categoriesRouter.js     # Categories routes
+│   │   ├── ingredientsRouter.js    # Ingredients routes
+│   │   ├── recipeRouter.js         # Recipe routes
+│   │   ├── testimonialsRouter.js   # Testimonials routes
+│   │   ├── usersRouter.js          # User profile routes
+│   │   └── usersSocialRouter.js    # Social features routes
 │   ├── schemas/                    # Data validation schemas (Joi)
+│   │   ├── authSchemas.js          # Authentication validation
+│   │   ├── recipeSchemas.js        # Recipe validation
+│   │   └── userRecipesSchemas.js   # User recipes validation
 │   ├── services/                   # Business logic layer
+│   │   ├── authService.js          # Authentication logic
+│   │   ├── areasService.js         # Areas business logic
+│   │   ├── categoriesService.js    # Categories business logic
+│   │   ├── cloudinaryService.js    # Image upload service
+│   │   ├── followService.js        # Social following logic
+│   │   ├── ingredientsService.js   # Ingredients business logic
+│   │   ├── recipeService.js        # Recipe business logic
+│   │   ├── testimonialsService.js  # Testimonials business logic
+│   │   └── usersService.js         # User management logic
+│   ├── temp/                       # Temporary file storage
 │   └── utils/                      # Utility functions
+│       ├── HttpError.js            # HTTP error utility
+│       └── jwt.js                  # JWT utilities
 ├── data/                           # Seed data (JSON files)
+│   ├── areas.json                  # Cuisine areas data
+│   ├── categories.json             # Recipe categories data
+│   ├── ingredients.json            # Ingredients database
+│   ├── recipes.json                # Sample recipes
+│   ├── testimonials.json           # User testimonials
+│   └── users.json                  # Sample users
 ├── scripts/
 │   └── seed-if-empty.js            # Conditional seeding script
 ├── .sequelizerc                    # Sequelize CLI configuration
@@ -138,21 +187,27 @@ cp .env.example .env
 
 Required environment variables:
 
-```bash
+```env
 # Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=yummi_db
-DB_USER=postgres
-DB_PASS=your_password
+DATABASE_URL=postgres://user:password@postgres:5432/dbname
 DB_SSL=false
 
 # Application Configuration
 PORT=3000
 NODE_ENV=development
 
-# JWT Configuration (add when implementing auth)
+# JWT Configuration
 JWT_SECRET=your_jwt_secret_key
+
+# Cloudinary Configuration (for image uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+
+# Postgres variables for Docker only
+DB_NAME=dbname
+DB_USER=user
+DB_PASS=password
 ```
 
 ### 4. Initial Database Setup
@@ -203,6 +258,11 @@ module.exports = {
   'migrations-path': path.resolve('src', 'db', 'migrations'),
 };
 ```
+  'models-path': path.resolve('src', 'db', 'models'),
+  'seeders-path': path.resolve('src', 'db', 'seeders'),
+  'migrations-path': path.resolve('src', 'db', 'migrations'),
+};
+```
 
 ### Available Sequelize CLI Commands
 
@@ -235,7 +295,9 @@ Migrations are executed in chronological order based on timestamps:
 6. **20250923200204-create-testimonials.cjs** - User testimonials
 7. **20250923200205-create-favorites.cjs** - User favorites junction
 8. **20250923200206-create-follows.cjs** - User follows junction
-9. **20250923200207-create-recipe-ingredients.cjs** - Recipe-ingredient junction
+8. **20250923200207-create-recipe-ingredients.cjs** - Recipe-ingredient junction
+9. **20251005005216-add-token-to-users.cjs** - Add token field to users
+10. **20251005005535-modify-token-field-length.cjs** - Modify token field length
 
 ### Seeder Overview
 
@@ -482,16 +544,20 @@ Interactive API documentation is available via Swagger UI:
 
 ### Environment Variables
 
-| Variable     | Description         | Default     | Required |
-| ------------ | ------------------- | ----------- | -------- |
-| `PORT`       | Application port    | `3000`      | No       |
-| `JWT_SECRET` | JWT signing secret  | -           | Yes      |
-| `DB_HOST`    | Database host       | `localhost` | Yes      |
-| `DB_NAME`    | Database name       | -           | Yes      |
-| `DB_USER`    | Database user       | -           | Yes      |
-| `DB_PASS`    | Database password   | -           | Yes      |
-| `DB_PORT`    | Database port       | `5432`      | Yes      |
-| `DB_SSL`     | Enable database SSL | `false`     | No       |
+| Variable                   | Description              | Default     | Required |
+| -------------------------- | ------------------------ | ----------- | -------- |
+| `PORT`                     | Application port         | `3000`      | No       |
+| `JWT_SECRET`               | JWT signing secret       | -           | Yes      |
+| `DATABASE_URL`             | Database URL             | `postgres://user:password@postgres:5432/dbname` | Yes      |
+| `DB_HOST`                  | Database host            | `localhost` | Yes      |
+| `DB_NAME`                  | Database name            | -           | Yes      |
+| `DB_USER`                  | Database user            | -           | Yes      |
+| `DB_PASS`                  | Database password        | -           | Yes      |
+| `DB_PORT`                  | Database port            | `5432`      | Yes      |
+| `DB_SSL`                   | Enable database SSL      | `false`     | No       |
+| `CLOUDINARY_CLOUD_NAME`    | Cloudinary cloud name    | -           | Yes      |
+| `CLOUDINARY_API_KEY`       | Cloudinary API key       | -           | Yes      |
+| `CLOUDINARY_API_SECRET`    | Cloudinary API secret    | -           | Yes      |
 
 ## 🗄️ Database
 
@@ -577,15 +643,20 @@ This project is configured for deployment on [Render](https://render.com/).
 
    Set the following environment variables in Render:
 
-   ```bash
+   ```env
    PORT=10000
    JWT_SECRET=your_super_secure_jwt_secret_key_here
+   DATABASE_URL=postgres://user:password@postgres:5432/dbname
    DB_HOST=your_render_postgres_host
    DB_NAME=your_render_postgres_database
    DB_USER=your_render_postgres_user
    DB_PASS=your_render_postgres_password
    DB_PORT=5432
    DB_SSL=true
+
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
    ```
 
 4. **Deploy**
